@@ -1,0 +1,20 @@
+{
+  "name": "lahack",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"no test needed\"",
+    "start": "nodemon server.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "child_process": "^1.0.2",
+    "express": "^4.16.4",
+    "python-shell": "^1.0.7"
+  },
+  "devDependencies": {
+    "nodemon": "^1.18.10"
+  }
+}

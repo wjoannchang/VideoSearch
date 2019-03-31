@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+        integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg fixed-top navbar-dark bg-dark">
+        <div class="row w-100">
+            <form action="index.html" class="form col-md-12 col-lg-9">
+                <div class="input-group">
+                    <input type="search" name="v" id="v-input" class="form-control w-50" placeholder="Search a video">
+                    <input type="text" name="keyword" id="keyword-input" class="form-control" placeholder="Keyword">
+                    <div class="input-group-append">
+                        <button type="submit" class="btn btn-light">Search</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </nav>
+
+    <div style="height: 100vh; padding-top: 4rem;" class="container-fluid">
+        <div class="row">
+            <div class="col">
+
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-sm-8">
+                <div style="width: 100%;" id="player"></div>
+                <div>
+                    <ul>
+                        <a href="index.html?v=HCf2oDXFypY">Demo 1</a>
+                    </ul>
+                    <ul>
+                        <a href="index.html?v=GKZp1jbcg_s">Demo 2</a>
+                    </ul>
+                    <ul>
+                        <a href="index.html?v=OCDS5L7mW1s">Demo 3</a>
+                    </ul>
+                </div>
+            </div>
+            <div class="col">
+                <ul class="nav nav-pills">
+                    <li class="nav-item">
+                        <a onclick="captionTab();" class="nav-link active" href="#">Caption</a>
+                    </li>
+                    <li class="nav-item">
+                        <a onclick="videoTab();" class="nav-link" href="#">Video</a>
+                    </li>
+                </ul>
+                <div id="caption-card-container">
+                    <div class="row mt-3">
+                        <div class="col text-center">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="sr-only">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="video-card-container" class="d-none">
+                    <div class="row mt-3">
+                        <div class="col text-center">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="sr-only">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const serverCaption = 'http://localhost/searchTranscription';
+        const serverVideo = 'http://localhost/searchVideo';
+        var player = null;
+        var onYouTubeIframeAPIReady = null;
+
+        // This is a debug variable
+        var testhaha = null;
+
+        function onPlayerReady(event) {
+            event.target.playVideo();
+        }
+
+        function seek(sec) {
+            if (player) {
+                player.seekTo(sec, true);
+            }
+        }
+
+        function loadVideo(id) {
+            var tag = document.createElement('script');
+
+            tag.src = "https://www.youtube.com/iframe_api";
+            var firstScriptTag = document.getElementsByTagName('script')[0];
+            firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+            onYouTubeIframeAPIReady = function () {
+                player = new YT.Player('player', {
+                    videoId: id,
+                    events: {
+                        'onReady': onPlayerReady
+                    }
+                });
+            }
+        }
+
+        function displayTime(totalSec) {
+            const kSecondPerMin = 60;
+            const kMinPerHour = 60;
+            const kSecondPerHour = 3600;
+            totalSec = parseInt(totalSec);
+            let sec = totalSec % kSecondPerMin;
+            let min = parseInt(totalSec / kSecondPerMin) % kMinPerHour;
+            let hour = parseInt(totalSec / kSecondPerHour);
+
+            sec = ('' + sec).padStart(2, '0');
+            min = ('' + min).padStart(2, '0');
+            hour = ('' + hour).padStart(2, '0');
+
+            if (hour > 0) {
+                return hour + ':' + min + ':' + sec;
+            }
+            return min + ':' + sec;
+        }
+
+        function displayCaptionCard(input) {
+            const container = document.getElementById('caption-card-container');
+
+            output = [];
+            input.transcriptionCandidate.forEach(candidate => {
+                let tmp = ' \
+                    <div class="row my-2"> \
+                        <div class="col"> \
+                            <a href="javascript:;" onclick="seek(' + candidate.time + ')"> \
+                                <div class="card"> \
+                                    <img class="card-img-top" src="' + candidate.url + '"> \
+                                    <div class="card-body"> \
+                                        <p class="card-text">' + candidate.sentence + '</p> \
+                                        <p class="card-text"><small class="text-muted">' + displayTime(candidate.time) + '</small></p> \
+                                    </div> \
+                                </div> \
+                            </a> \
+                        </div> \
+                    </div>';
+                let re = new RegExp('\\b' + keyword + '\\b');
+                tmp = tmp.replace(re, '<strong>' + keyword + '</strong>');
+                output.push(tmp);
+            });
+            container.innerHTML = output.join("");
+        }
+
+        function displayVideoCard(input) {
+            const container = document.getElementById('video-card-container');
+
+            output = [];
+            input.videoCandidate.forEach(t => {
+                output.push(' \
+                    <div class="row"> \
+                        <div class="col"> \
+                            <a href="javascript:;" onclick="seek(' + t.time + ')"> \
+                                <div class="card"> \
+                                    <img src="' + t.url + '" class="card-img-top"> \
+                                    <div class="card-body"> \
+                                        <p class="card-text"><small class="text-muted">' + displayTime(t.time) + '</small></p> \
+                                    </div> \
+                                </div> \
+                            </a> \
+                        </div> \
+                    </div>');
+            });
+
+            container.innerHTML = output.join("");
+        }
+
+        for (nav of document.querySelectorAll('.nav-pills .nav-link')) {
+            nav.addEventListener('click', function () {
+                for (e of document.querySelectorAll('.nav-pills .nav-link')) {
+                    e.className = 'nav-link';
+                }
+                this.className += ' active';
+            });
+        };
+
+        function captionTab() {
+            document.getElementById('caption-card-container').classList = [];
+            document.getElementById('video-card-container').classList = ['d-none'];
+        }
+
+        function videoTab() {
+            document.getElementById('caption-card-container').classList = ['d-none'];
+            document.getElementById('video-card-container').classList = [];
+        }
+
+        let params = (new URL(document.location)).searchParams;
+        var name = params.get("v");
+        var keyword = params.get("keyword");
+        document.getElementById('v-input').value = name;
+        document.getElementById('keyword-input').value = keyword;
+        loadVideo(name);
+
+        // initiate a http caption request
+        let httpCaption = new XMLHttpRequest();
+        httpCaption.addEventListener('load', function () {
+            displayCaptionCard(JSON.parse(this.responseText));
+        });
+        let url = serverCaption + '?video=' + name + '&keyword=' + keyword;
+        httpCaption.open('GET', url);
+        httpCaption.send();
+
+        // initiate a http video request
+        let httpVideo = new XMLHttpRequest();
+        httpVideo.addEventListener('load', function () {
+            displayVideoCard(JSON.parse(this.responseText));
+        });
+        url = serverVideo + '?video=' + name + '&keyword=' + keyword;
+        httpVideo.open('GET', url);
+        httpVideo.send();
+    </script>
+
+</body>
+
+</html>
